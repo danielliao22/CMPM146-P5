@@ -33,6 +33,7 @@ class State(OrderedDict):
         return str(dict(item for item in self.items() if item[1] > 0))
 
 
+# Done
 def make_checker(rule):
     # Implement a function that returns a function to determine whether a state meets a
     # rule's requirements. This code runs once, when the rules are constructed before
@@ -41,6 +42,17 @@ def make_checker(rule):
     def check(state):
         # This code is called by graph(state) and runs millions of times.
         # Tip: Do something with rule['Consumes'] and rule['Requires'].
+        if 'Consumes' in rule:
+
+            for item in rule['Consumes']:
+                if not rule['Consumes'][item] >= state[item]:
+                    return False
+        if 'Requires' in rule:
+   
+            for item in rule['Requires']:
+                if state[item] == 0:
+                    return False
+
         return True
 
     return check
@@ -54,7 +66,15 @@ def make_effector(rule):
     def effect(state):
         # This code is called by graph(state) and runs millions of times
         # Tip: Do something with rule['Produces'] and rule['Consumes'].
-        next_state = None
+
+        next_state = state.copy()
+
+        if 'Produces' in rule:
+            for item in rule['Produces']:
+                next_state[item] += rule['Produces'][item]
+            for item in rule['Consumes']:
+                next_state[item] -= rule['Consumes'][item]
+
         return next_state
 
     return effect
@@ -66,6 +86,7 @@ def make_goal_checker(goal):
 
     def is_goal(state):
         # This code is used in the search process and may be called millions of times.
+        
         return False
 
     return is_goal
