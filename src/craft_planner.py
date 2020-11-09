@@ -91,7 +91,7 @@ def make_goal_checker(goal):
                 return False
 
 
-        return False
+        return True
 
     return is_goal
 
@@ -105,19 +105,45 @@ def graph(state):
             yield (r.name, r.effect(state), r.cost)
 
 
-def heuristic(state, prev_state):
+def heuristic(state, prev_state, action):
     # Implement your heuristic here!
-    required_items = ["bench", "furnace", "cart", "wooden_pickaxe", "stone_pickaxe", "iron_pickaxe", "wooden_axe", "iron_axe", "iron_axe"]
+    required_items = ["bench", "furnace", "cart", "wooden_pickaxe", "stone_pickaxe", "iron_pickaxe", "wooden_axe", "stone_axe", "iron_axe"]
     
     # De-prioritize making multiple tools
     for item in required_items:
         if state[item] > 1:
             return math.inf
     
-    # if can make a new tool, prioritize it
+    # if can make a new tool, prioritize it; especially if it's a furnace or bench
     for item in required_items:
-        if prev_state[item] == 0 and state[item] == 1:
-            return 0
+        if prev_state[item] < 1 and state[item] > 0:
+            # priotize making a furnace and bench even more
+            if item == "furnace" or item == "bench":
+                return -1000000
+            else:
+                return -100000
+
+    # De-priotize moves that use a weaker tool
+    if (action.startswith("wooden_pickaxe") and (state["stone_pickaxe"] > 0 or state["iron_pickaxe"] > 0)) or \
+        (action.startswith("stone_pickaxe") and state["iron_pickaxe"] > 0) or \
+        (action.startswith("wooden_axe") and (state["stone_axe"] > 0 or state["iron_axe"] > 0)) or \
+        (action.startswith("stone_axe") and state["iron_axe"] > 0):
+        return math.inf/2
+
+    # if you have a pickaxe prioritize mining if you're below a threshold; de-prioritize if above a treshold
+    if action.split()[0].endswith("_pickaxe"):
+        if prev_state["cobble"] < 4 and prev_state["cobble"] < state["cobble"]:
+            return -10000
+        elif prev_state["cobble"] > 10 and prev_state["cobble"] < state["cobble"]:
+            return math.inf/4
+        elif prev_state["coal"] > 12 and prev_state["coal"] < state["coal"]:
+            return math.inf/4
+        elif prev_state["ore"] > 12 and prev_state["ore"] < state["ore"]:
+            return math.inf/4
+
+    # if you can craft an item then do it
+    if action.startswith("craft"):
+        return 0
 
     return 10
 
@@ -147,7 +173,7 @@ def search(graph, state, is_goal, limit, heuristic):
     while time() - start_time < limit:
         #current = frontier.get()
         current_dist, current_state = heappop(frontier)
-        print(current_state)
+        # print(current_state)
         #if current == goal:
         if is_goal(current_state):
         #break
@@ -161,7 +187,7 @@ def search(graph, state, is_goal, limit, heuristic):
                 if effect not in cost_so_far or new_cost < cost_so_far[effect]:
                     #cost_so_far[next] = new_cost
                     cost_so_far[effect] = new_cost
-                    priority = new_cost + heuristic(effect, current_state)
+                    priority = new_cost + heuristic(effect, current_state, action)
     
                     #came_from[next] = current
                     came_from[effect] = current_state
@@ -175,10 +201,10 @@ def search(graph, state, is_goal, limit, heuristic):
     #make path[] here
     path = []
     if is_goal(current_state):
-        while current_state and actions[current_state]:
+        while current_state is not state: # state here is initial_state
             path.append((current_state, actions[current_state]))
             current_state = came_from[current_state]
-        path.reverse
+        path.reverse()
         return path
 
     # Failed to find a path
@@ -220,8 +246,22 @@ if __name__ == '__main__':
     # Search for a solution
     resulting_plan = search(graph, state, is_goal, 30, heuristic)
 
+    action_cost = 0
+    time_cost = 0
     if resulting_plan:
         # Print resulting plan
         for state, action in resulting_plan:
             print('\t',state)
             print(action)
+
+        # print in-game time
+        for state, action in resulting_plan:
+            for recipe in all_recipes:
+                # print(action, "|",recipe.name)
+                if recipe.name == action:
+                    time_cost += recipe.cost
+        
+        action_cost = len(resulting_plan)
+        
+    print("time-cost=",time_cost)
+    print("Len=",action_cost)
