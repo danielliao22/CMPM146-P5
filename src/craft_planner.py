@@ -113,6 +113,11 @@ def heuristic(state, prev_state):
     for item in required_items:
         if state[item] > 1:
             return math.inf
+    
+    # if can make a new tool, prioritize it
+    for item in required_items:
+        if prev_state[item] == 0 and state[item] == 1:
+            return 0
 
     return 10
 
