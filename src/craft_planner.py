@@ -158,6 +158,11 @@ def search(graph, state, is_goal, limit, heuristic):
 
             visited.append(current_state)
 
+            
+        #make path[] here
+        path = []
+        
+
 
         
 
