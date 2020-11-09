@@ -86,7 +86,7 @@ def make_goal_checker(goal):
     def is_goal(state):
         # This code is used in the search process and may be called millions of times.
         for item in goal:
-            if not state[item] >= goal[item]:
+            if state[item] < goal[item]:
                 return False
 
         return True
@@ -116,7 +116,6 @@ def search(graph, state, is_goal, limit, heuristic):
     # representing the path. Each element (tuple) of the list represents a state
     # in the path and the action that took you to this state
     while time() - start_time < limit:
-        pass
 
         # frontier = PriorityQueue()
         frontier, visited, actions = [], [], {}
@@ -145,11 +144,11 @@ def search(graph, state, is_goal, limit, heuristic):
                     #new_cost = cost_so_far[current] + graph.cost(current, next)
                     new_cost = current_dist + cost
                     #if next not in cost_so_far or new_cost < cost_so_far[next]:
-                    if effect not in cost_so_far or new_cost < cost_so_far[next]:
+                    if effect not in cost_so_far or new_cost < cost_so_far[effect]:
                         #cost_so_far[next] = new_cost
                         cost_so_far[effect] = new_cost
                         #priority = new_cost + heuristic(goal, next)
-
+        
                         #came_from[next] = current
                         came_from[effect] = current_state
                         actions[effect] = action
@@ -161,7 +160,13 @@ def search(graph, state, is_goal, limit, heuristic):
             
         #make path[] here
         path = []
-        
+        if is_goal(current_state):
+            while current_state and actions[current_state]:
+                path.append((current_state, actions[current_state]))
+                current_state = came_from[current_state]
+            path.reverse
+
+        return path
 
 
         
