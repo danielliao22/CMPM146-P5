@@ -86,13 +86,9 @@ def make_goal_checker(goal):
     def is_goal(state):
         # This code is used in the search process and may be called millions of times.
         for item in goal:
-<<<<<<< HEAD
             if state[item] < goal[item]:
                 return False
-=======
-            if state[item] >= goal[item]:
-                return True
->>>>>>> 6048bee695c9d032eb9df50522fe74a9b0c0059a
+
 
         return False
 
@@ -121,7 +117,7 @@ def search(graph, state, is_goal, limit, heuristic):
     # When you find a path to the goal return a list of tuples [(state, action)]
     # representing the path. Each element (tuple) of the list represents a state
     # in the path and the action that took you to this state
-<<<<<<< HEAD
+
     while time() - start_time < limit:
 
         # frontier = PriorityQueue()
@@ -174,58 +170,6 @@ def search(graph, state, is_goal, limit, heuristic):
             path.reverse
 
         return path
-=======
-    # while time() - start_time < limit:
-    #     pass
-
-    # frontier = PriorityQueue()
-    frontier, visited, actions = [], [], {}
-    # frontier.put(start, 0)
-    heappush(frontier, (0, state))
-    # came_from = dict()
-    came_from = {}
-    # cost_so_far = dict()
-    cost_so_far = {}
-    # came_from[start] = None
-    came_from[state] = None
-    # cost_so_far[start] = 0
-    cost_so_far[state] = 0
-
-    # while not frontier.empty():
-    while frontier:
-        #current = frontier.get()
-        current_dist, current_state = heappop(frontier)
-        #if current == goal:
-        if is_goal(current_state):
-        #break
-            break
-        #for next in graph.neighbors(current):
-        for action, effect, cost in graph(current_state):
-            if effect not in visited:
-                #new_cost = cost_so_far[current] + graph.cost(current, next)
-                new_cost = current_dist + cost
-                #if next not in cost_so_far or new_cost < cost_so_far[next]:
-                if effect not in cost_so_far or new_cost < cost_so_far[effect]:
-                    #cost_so_far[next] = new_cost
-                    cost_so_far[effect] = new_cost
-                    #priority = new_cost + heuristic(goal, next)
-
-                    #came_from[next] = current
-                    came_from[effect] = current_state
-                    actions[effect] = action
-                    #frontier.put(next, priority)
-                    heappush(frontier, (new_cost, effect))
-
-        visited.append(current_state)
-
-        
-    #make path[] here
-    path = []
-        
->>>>>>> 6048bee695c9d032eb9df50522fe74a9b0c0059a
-
-
-        
 
 
     # Failed to find a path
