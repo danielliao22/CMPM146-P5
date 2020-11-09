@@ -119,7 +119,7 @@ def search(graph, state, is_goal, limit, heuristic):
         pass
 
         # frontier = PriorityQueue()
-        frontier, visited = [], []
+        frontier, visited, actions = [], [], {}
         # frontier.put(start, 0)
         heappush(frontier, (0, state))
         # came_from = dict()
@@ -158,7 +158,7 @@ def search(graph, state, is_goal, limit, heuristic):
 
             visited.append(current_state)
 
-    
+
         
 
 
