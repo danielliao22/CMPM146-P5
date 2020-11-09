@@ -43,14 +43,12 @@ def make_checker(rule):
         # This code is called by graph(state) and runs millions of times.
         # Tip: Do something with rule['Consumes'] and rule['Requires'].
         if 'Consumes' in rule:
-
             for item in rule['Consumes']:
-                if not rule['Consumes'][item] >= state[item]:
+                if rule['Consumes'][item] > state[item]:
                     return False
         if 'Requires' in rule:
-   
             for item in rule['Requires']:
-                if state[item] == 0:
+                if state[item] < 1:
                     return False
 
         return True
@@ -69,11 +67,10 @@ def make_effector(rule):
 
         next_state = state.copy()
 
-        if 'Produces' in rule:
-            for item in rule['Produces']:
-                next_state[item] += rule['Produces'][item]
-            for item in rule['Consumes']:
-                next_state[item] -= rule['Consumes'][item]
+        for item in rule['Produces']:
+            next_state[item] += rule['Produces'][item]
+        for item in rule['Consumes']:
+            next_state[item] -= rule['Consumes'][item]
 
         return next_state
 
@@ -118,6 +115,28 @@ def search(graph, state, is_goal, limit, heuristic):
     # in the path and the action that took you to this state
     while time() - start_time < limit:
         pass
+
+# rontier = PriorityQueue()
+# frontier.put(start, 0)
+# came_from = dict()
+# cost_so_far = dict()
+# came_from[start] = None
+# cost_so_far[start] = 0
+
+# while not frontier.empty():
+#    current = frontier.get()
+
+#    if current == goal:
+#       break
+   
+#    for next in graph.neighbors(current):
+#       new_cost = cost_so_far[current] + graph.cost(current, next)
+#       if next not in cost_so_far or new_cost < cost_so_far[next]:
+#          cost_so_far[next] = new_cost
+#          priority = new_cost + heuristic(goal, next)
+#          frontier.put(next, priority)
+#          came_from[next] = current
+
 
     # Failed to find a path
     print(time() - start_time, 'seconds.')
