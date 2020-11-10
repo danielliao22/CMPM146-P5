@@ -147,6 +147,7 @@ def heuristic(state, prev_state, action):
 
     return 10
 
+
 def search(graph, state, is_goal, limit, heuristic):
 
     start_time = time()
@@ -157,7 +158,7 @@ def search(graph, state, is_goal, limit, heuristic):
     # in the path and the action that took you to this state
 
     # frontier = PriorityQueue()
-    frontier, visited, actions = [], [], {}
+    frontier, actions = [], {}
     # frontier.put(start, 0)
     heappush(frontier, (0, state))
     # came_from = dict()
@@ -168,6 +169,9 @@ def search(graph, state, is_goal, limit, heuristic):
     came_from[state] = None
     # cost_so_far[start] = 0
     cost_so_far[state] = 0
+
+    visited = set()
+    visited.add(state)
 
     # while not frontier.empty():
     while time() - start_time < limit:
@@ -180,22 +184,22 @@ def search(graph, state, is_goal, limit, heuristic):
             break
         #for next in graph.neighbors(current):
         for action, effect, cost in graph(current_state):
-            if effect not in visited:
-                #new_cost = cost_so_far[current] + graph.cost(current, next)
-                new_cost = current_dist + cost
-                #if next not in cost_so_far or new_cost < cost_so_far[next]:
-                if effect not in cost_so_far or new_cost < cost_so_far[effect]:
-                    #cost_so_far[next] = new_cost
-                    cost_so_far[effect] = new_cost
-                    priority = new_cost + heuristic(effect, current_state, action)
-    
-                    #came_from[next] = current
-                    came_from[effect] = current_state
-                    actions[effect] = action
-                    #frontier.put(next, priority)
-                    heappush(frontier, (priority, effect))
+            #new_cost = cost_so_far[current] + graph.cost(current, next)
+            new_cost = current_dist + cost
 
-        visited.append(current_state)
+            #if next not in cost_so_far or new_cost < cost_so_far[next]:
+            if effect not in cost_so_far or new_cost < cost_so_far[effect] and effect not in visited:
+                #cost_so_far[next] = new_cost
+                cost_so_far[effect] = new_cost
+                priority = new_cost #+ heuristic(effect, current_state, action)
+
+                #came_from[next] = current
+                came_from[effect] = current_state
+                actions[effect] = action
+                #frontier.put(next, priority)
+                visited.add(effect)
+                heappush(frontier, (priority, effect))
+
 
         
     #make path[] here
