@@ -105,7 +105,7 @@ def graph(state):
             yield (r.name, r.effect(state), r.cost)
 
 
-def heuristic(state, prev_state, action):
+def heuristic(state, prev_state, action, axe_in_goals):
     # Implement your heuristic here!
     required_items = ["bench", "furnace", "cart", "wooden_pickaxe", "stone_pickaxe", "iron_pickaxe", "wooden_axe", "stone_axe", "iron_axe"]
     
@@ -124,12 +124,49 @@ def heuristic(state, prev_state, action):
     # smelt if can, since coal and ore is useless on its own
     if action.startswith("smelt ore in furnace"):
         return -100
+
+    # if the goal doesn't contain axe then deoprioritize making axes
+    if "_axe" in action and not axe_in_goals:
+        return inf
+
+    # if you don't have a bench but have enough wood to make it, deprioritize everything else
+    if state["bench"] == 0 and state["plank"] > 3 and state["plank"] < prev_state["plank"]:
+        return inf
+
+    # if you don't have a furnace but have enough wood to make it, deprioritize everything else
+    if state["bench"] == 0 and state["cobble"] > 7 and state["cobble"] < prev_state["cobble"]:
+        return inf
+
+    # if you have a cart prioritize making rails for it
+    if state["cart"] > 0 and state["iron_pickaxe"] > prev_state["iron_pickaxe"]:
+        return inf
+
+    #if state[""]
     
     # don't mine cobble after furnace
     if state['furnace'] > 0 and state["cobble"] > prev_state["cobble"]:
-        return inf/2
+        return 1000
     
-    #helllo pls delete this line
+    # dont mine ore or coal if no furnace
+    if state['furnace'] == 0 and (state["coal"] > prev_state["coal"] or state["ore"] > prev_state["ore"]):
+        return 1000
+
+    # CAP raw materials: woods, plank, stick, cobble, ingot, coal, ore
+    if state["wood"] > prev_state["wood"] and prev_state["wood"] > 1:
+        return inf
+    if state["plank"] > prev_state["plank"] and prev_state["plank"] > 4:
+        return inf
+    if state["stick"] > prev_state["stick"] and prev_state["stick"] > 4:
+        return inf
+    if state["cobble"] > prev_state["cobble"] and prev_state["cobble"] > 8:
+        return inf
+    if state["ingot"] > prev_state["ingot"] and prev_state["ingot"] > 100:
+        return inf
+    if state["coal"] > prev_state["coal"] and prev_state["coal"] > 1:
+        return inf
+    if state["ore"] > prev_state["ore"] and prev_state["ore"] > 1:
+        return inf
+    
     return 0
 
 def search(graph, state, is_goal, limit, heuristic):
@@ -139,6 +176,12 @@ def search(graph, state, is_goal, limit, heuristic):
     # When you find a path to the goal return a list of tuples [(state, action)]
     # representing the path. Each element (tuple) of the list represents a state
     # in the path and the action that took you to this state
+
+    # check if axe is in goals
+    axe_in_goals = False
+    for goal in Crafting["Goal"]:
+        if Crafting["Goal"][goal] > 0 and goal.endswith("_axe"):
+            axe_in_goals = True
 
     frontier, actions = [], {}
     heappush(frontier, (0, state))
@@ -153,7 +196,7 @@ def search(graph, state, is_goal, limit, heuristic):
     while time() - start_time < limit:
         current_dist, current_state = heappop(frontier)
         state_explored_counter +=1
-        # print(current_state)
+        print(current_state)
         if is_goal(current_state):
             print("Time-Elapsed:", time() - start_time)
             print("Number of states explored:", state_explored_counter)
@@ -166,7 +209,7 @@ def search(graph, state, is_goal, limit, heuristic):
                 came_from[effect] = current_state
                 actions[effect] = action
 
-                priority = new_cost + heuristic(effect, current_state, action)
+                priority = new_cost + heuristic(effect, current_state, action, axe_in_goals)
                 heappush(frontier, (priority, effect))
 
 
