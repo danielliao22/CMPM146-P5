@@ -165,5 +165,6 @@ craft cart at bench
 
 Number of states explored: 59264
 In-game Time Cost: 201
+Compute-Time 10.4620335
 Number of Actions: 81
 
