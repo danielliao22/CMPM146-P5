@@ -129,6 +129,7 @@ def heuristic(state, prev_state, action):
     if state['furnace'] > 0 and state["cobble"] > prev_state["cobble"]:
         return inf/2
     
+    #helllo pls delete this line
     return 0
 
 def search(graph, state, is_goal, limit, heuristic):
