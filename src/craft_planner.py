@@ -113,15 +113,6 @@ def heuristic(state, prev_state, action):
     for item in required_items:
         if state[item] > 1:
             return math.inf
-    
-    # if can make a new tool, prioritize it; especially if it's a furnace or bench
-    for item in required_items:
-        if prev_state[item] < 1 and state[item] > 0:
-            # priotize making a furnace and bench even more
-            if item == "furnace" or item == "bench":
-                return -1000000
-            else:
-                return -100000
 
     # De-priotize moves that use a weaker tool
     if (action.startswith("wooden_pickaxe") and (state["stone_pickaxe"] > 0 or state["iron_pickaxe"] > 0)) or \
@@ -129,11 +120,32 @@ def heuristic(state, prev_state, action):
         (action.startswith("wooden_axe") and (state["stone_axe"] > 0 or state["iron_axe"] > 0)) or \
         (action.startswith("stone_axe") and state["iron_axe"] > 0):
         return math.inf/2
+    
+    #work towards iron pickaxe if you have a stone pickaxe
+    # if state["stone_pickaxe"] > 0 and state["iron_pickaxe"] < 1:
+
+    # if can make a new tool, prioritize it; especially if it's a furnace or bench
+    for item in required_items:
+        if prev_state[item] < 1 and state[item] > 0:
+            # priotize making a furnace and bench even more
+            if item == "furnace" or item == "bench":
+                return -100000
+            elif item.endswith("_pickaxe"):
+                return -1000000
+            elif item.endswith("_axe"): # de-priotize axes
+                return 50
+    
+    # if you can craft an item then do it
+    # if action.startswith("craft"):
+    #     if action.endswith("stick") and state["stick"] > 2:
+    #         return 100
+    #     else:
+    #         return -1000
 
     # if you have a pickaxe prioritize mining if you're below a threshold; de-prioritize if above a treshold
     if action.split()[0].endswith("_pickaxe"):
         if prev_state["cobble"] < 4 and prev_state["cobble"] < state["cobble"]:
-            return -10000
+            return -100
         elif prev_state["cobble"] > 10 and prev_state["cobble"] < state["cobble"]:
             return math.inf/4
         elif prev_state["coal"] > 12 and prev_state["coal"] < state["coal"]:
@@ -141,11 +153,8 @@ def heuristic(state, prev_state, action):
         elif prev_state["ore"] > 12 and prev_state["ore"] < state["ore"]:
             return math.inf/4
 
-    # if you can craft an item then do it
-    if action.startswith("craft"):
-        return 0
-
     return 10
+
 
 def search(graph, state, is_goal, limit, heuristic):
 
