@@ -196,7 +196,7 @@ def search(graph, state, is_goal, limit, heuristic):
     while time() - start_time < limit:
         current_dist, current_state = heappop(frontier)
         state_explored_counter +=1
-        print(current_state)
+        #print(current_state)
         if is_goal(current_state):
             print("Time-Elapsed:", time() - start_time)
             print("Number of states explored:", state_explored_counter)
