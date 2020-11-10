@@ -199,7 +199,7 @@ def search(graph, state, is_goal, limit, heuristic):
             if effect not in cost_so_far or new_cost < cost_so_far[effect] and effect not in visited:
                 #cost_so_far[next] = new_cost
                 cost_so_far[effect] = new_cost
-                priority = new_cost #+ heuristic(effect, current_state, action)
+                priority = new_cost + heuristic(effect, current_state, action)
 
                 #came_from[next] = current
                 came_from[effect] = current_state
