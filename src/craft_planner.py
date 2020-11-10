@@ -2,7 +2,7 @@ import json
 from collections import namedtuple, defaultdict, OrderedDict
 from timeit import default_timer as time
 from heapq import heappop, heappush
-import math
+from math import inf
 
 Recipe = namedtuple('Recipe', ['name', 'check', 'effect', 'cost'])
 
@@ -112,53 +112,180 @@ def heuristic(state, prev_state, action):
     # De-prioritize making multiple tools
     for item in required_items:
         if state[item] > 1:
-            return math.inf
+            return inf
 
     # De-priotize moves that use a weaker tool
     if (action.startswith("wooden_pickaxe") and (state["stone_pickaxe"] > 0 or state["iron_pickaxe"] > 0)) or \
         (action.startswith("stone_pickaxe") and state["iron_pickaxe"] > 0) or \
         (action.startswith("wooden_axe") and (state["stone_axe"] > 0 or state["iron_axe"] > 0)) or \
         (action.startswith("stone_axe") and state["iron_axe"] > 0):
-        return math.inf/2
+        return inf/2
+
+    if action.startswith("smelt ore in furnace"):
+        return -100
     
-    #work towards iron pickaxe if you have a stone pickaxe
-    # if state["stone_pickaxe"] > 0 and state["iron_pickaxe"] < 1:
+    goal_items = Crafting["Goal"].keys()
+    deprioritize_iron_pickaxe = False
+    for g_item in goal_items:
+        if g_item == "cart":
+            deprioritize_iron_pickaxe = True
+    # print(goal_items)
 
     # if can make a new tool, prioritize it; especially if it's a furnace or bench
     for item in required_items:
         if prev_state[item] < 1 and state[item] > 0:
             # priotize making a furnace and bench even more
             if item == "furnace" or item == "bench":
-                return -100000
-            elif item.endswith("_pickaxe"):
-                return -1000000
+                return -1000
+            if deprioritize_iron_pickaxe and item == "iron_pickaxe":
+                return 10
+            if item.endswith("cart"):
+                return -100
             elif item.endswith("_axe"): # de-priotize axes
-                return 50
+                return inf
     
-    # if you can craft an item then do it
-    # if action.startswith("craft"):
-    #     if action.endswith("stick") and state["stick"] > 2:
-    #         return 100
-    #     else:
-    #         return -1000
-
-    # if you have a pickaxe prioritize mining if you're below a threshold; de-prioritize if above a treshold
-    # if action.split()[0].endswith("_pickaxe"):
-    #     if prev_state["cobble"] < 4 and prev_state["cobble"] < state["cobble"]:
-    #         return -100
-    #     elif prev_state["cobble"] > 10 and prev_state["cobble"] < state["cobble"]:
-    #         return math.inf/4
-    #     elif prev_state["coal"] > 12 and prev_state["coal"] < state["coal"]:
-    #         return math.inf/4
-    #     elif prev_state["ore"] > 12 and prev_state["ore"] < state["ore"]:
-    #         return math.inf/4
+        # if prev_state["ingot"] > 15 and state["ingot"] > prev_state["ingot"]:
+    #     return inf
 
     return 0
+
+def heuristic2(state, action):
+    # Takes a next state, returns a heuristic value
+
+    value = 0
+
+    # current action rule
+    for name, rule in Crafting['Recipes'].items():
+        if name == action:
+            action_rule = rule
+
+    # list of tools/tables
+    tools_tables_list = ["bench",
+                         "furnace",
+                         "iron_axe",
+                         "iron_pickaxe",
+                         "stone_axe",
+                         "stone_pickaxe",
+                         "wooden_axe",
+                         "wooden_pickaxe"]
+
+    # PRUNE 1
+    # don't craft duplicate tools
+    if 'Produces' in action_rule:
+        for t in tools_tables_list:
+            if (state[t] > 1) and (t in action_rule['Produces']):
+                value += inf
+
+
+    # PRUNE 2
+    # follow logical tool crafting flow
+
+    # prioritize bench
+    if state['bench'] == 0 and ('stick' in action_rule['Produces']):
+        value += inf
+
+    # prioritize wooden pickaxe
+    if state['wooden_pickaxe'] == 0 and ('wooden_axe' in action_rule['Produces']):
+        value += inf
+
+    # prioritize stone pickaxe
+    if state['stone_pickaxe'] == 0 and ('stone_axe' in action_rule['Produces']):
+        value += inf
+
+    # prioritize furnace
+    if state['furnace'] == 0 and ('stone_axe' in action_rule['Produces']):
+        value += inf
+
+    # prioritize iron pickaxe
+    if state['iron_pickaxe'] == 0 and ('stone_axe' in action_rule['Produces'] or \
+                                        'wooden_axe' in action_rule['Produces'] or \
+                                        'iron_axe' in action_rule['Produces']):
+        value += inf
+
+    # don't mine coal/ore without furnace
+    if state['furnace'] == 0 and ('coal' in action_rule['Produces'] or \
+                                    'ore' in action_rule['Produces']):
+        value += inf
+
+    # don't mine cobble after furnace
+    if state['furnace'] > 0 and 'cobble' in action_rule['Produces']:
+        value += 100
+
+
+    # PRUNE 3
+    # general limiters (confine to min(item as recipe output, item as recipe input))
+    if state['wood'] > 1:
+        value += 100
+    if state['plank'] > 4:
+        value += 100
+    if state['stick'] > 4:
+        value += 100
+    if state['cobble'] > 8:
+        value += 100
+    if state['coal'] > 1:
+        value += 100
+    if state['ore'] > 1:
+        value += 100
+    if state['ingot'] > 6:
+        value += 100
+    if state['cart'] > 1:
+        value += 100
+
+    # balance coal/ore/ingot
+    if state['ore'] > state['coal']+1:
+        value += 100
+    if state['coal'] > state['ore']+1:
+        value += 100
+    if state['ore'] > state['ingot']+1:
+        value += 100
+
+
+
+    # solve order-insensitive?
+    if 'Consumes' in action_rule:
+        value += 0
+    else:
+        value += 5
+
+    # return final heuristic value
+    return value
+
+# not working
+def get_required_list(goal):
+    required_needed = State({key: 0 for key in Crafting['Items']})
+    tools = ['bench', 'wooden_pickaxe', 'wooden_axe', 'stone_axe', 'stone_pickaxe', 'iron_pickaxe', 'iron_axe', 'furnace']
+    queue = []
+
+    for item in goal:
+        queue.append((item, goal[item]))
+
+    while queue:
+        item, amount = queue.pop()
+        # print(item, amount)
+
+        if item in tools:
+            required_needed[item] = 1
+
+        for action in Crafting['Recipes']:
+            if item in Crafting['Recipes'][action]['Produces']:
+
+
+                if 'Consumes' in Crafting['Recipes'][action]:
+                    for consumable in Crafting['Recipes'][action]['Consumes']:
+                        queue.append((consumable, Crafting['Recipes'][action]['Consumes'][consumable]))
+
+
+                if 'Requires' in Crafting['Recipes'][action]:
+                    for requireable in Crafting['Recipes'][action]['Requires']:
+                        if required_needed[requireable] == 0:
+                            print(action,"|", requireable)
+                            queue.append((requireable, 1))
+                
+    return required_needed
 
 def search(graph, state, is_goal, limit, heuristic):
 
     start_time = time()
-
     # Implement your search here! Use your heuristic here!
     # When you find a path to the goal return a list of tuples [(state, action)]
     # representing the path. Each element (tuple) of the list represents a state
@@ -180,6 +307,8 @@ def search(graph, state, is_goal, limit, heuristic):
     visited = set()
     visited.add(state)
 
+    #required_items = get_required_list(Crafting["Goal"])
+    #print(required_items)
     # while not frontier.empty():
     while time() - start_time < limit:
         #current = frontier.get()
@@ -188,6 +317,7 @@ def search(graph, state, is_goal, limit, heuristic):
         #if current == goal:
         if is_goal(current_state):
         #break
+            print(time() - start_time)
             break
         #for next in graph.neighbors(current):
         for action, effect, cost in graph(current_state):
@@ -198,7 +328,7 @@ def search(graph, state, is_goal, limit, heuristic):
             if effect not in cost_so_far or new_cost < cost_so_far[effect]:
                 #cost_so_far[next] = new_cost
                 cost_so_far[effect] = new_cost
-                priority = new_cost + heuristic(effect, current_state, action)
+                priority = new_cost + heuristic2(effect, action) # heuristic(effect, current_state, action)
 
                 #came_from[next] = current
                 came_from[effect] = current_state
@@ -272,6 +402,6 @@ if __name__ == '__main__':
                     time_cost += recipe.cost
         
         action_cost = len(resulting_plan)
-        
+    print("HELLO")
     print("time-cost=",time_cost)
     print("Len=",action_cost)
