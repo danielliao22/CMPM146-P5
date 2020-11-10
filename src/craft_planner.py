@@ -143,18 +143,17 @@ def heuristic(state, prev_state, action):
     #         return -1000
 
     # if you have a pickaxe prioritize mining if you're below a threshold; de-prioritize if above a treshold
-    if action.split()[0].endswith("_pickaxe"):
-        if prev_state["cobble"] < 4 and prev_state["cobble"] < state["cobble"]:
-            return -100
-        elif prev_state["cobble"] > 10 and prev_state["cobble"] < state["cobble"]:
-            return math.inf/4
-        elif prev_state["coal"] > 12 and prev_state["coal"] < state["coal"]:
-            return math.inf/4
-        elif prev_state["ore"] > 12 and prev_state["ore"] < state["ore"]:
-            return math.inf/4
+    # if action.split()[0].endswith("_pickaxe"):
+    #     if prev_state["cobble"] < 4 and prev_state["cobble"] < state["cobble"]:
+    #         return -100
+    #     elif prev_state["cobble"] > 10 and prev_state["cobble"] < state["cobble"]:
+    #         return math.inf/4
+    #     elif prev_state["coal"] > 12 and prev_state["coal"] < state["coal"]:
+    #         return math.inf/4
+    #     elif prev_state["ore"] > 12 and prev_state["ore"] < state["ore"]:
+    #         return math.inf/4
 
-    return 10
-
+    return 0
 
 def search(graph, state, is_goal, limit, heuristic):
 
@@ -196,7 +195,7 @@ def search(graph, state, is_goal, limit, heuristic):
             new_cost = current_dist + cost
 
             #if next not in cost_so_far or new_cost < cost_so_far[next]:
-            if effect not in cost_so_far or new_cost < cost_so_far[effect] and effect not in visited:
+            if effect not in cost_so_far or new_cost < cost_so_far[effect]:
                 #cost_so_far[next] = new_cost
                 cost_so_far[effect] = new_cost
                 priority = new_cost + heuristic(effect, current_state, action)
@@ -205,7 +204,6 @@ def search(graph, state, is_goal, limit, heuristic):
                 came_from[effect] = current_state
                 actions[effect] = action
                 #frontier.put(next, priority)
-                visited.add(effect)
                 heappush(frontier, (priority, effect))
 
 
